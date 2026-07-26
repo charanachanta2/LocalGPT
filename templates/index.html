@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>LocalGPT</title>
+
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+
+
+
+  <!--
+        These are CDN versions for now.
+        Before the final fully-offline EXE,
+        we'll download these libraries locally.
+    -->
+
+  <script src="{{ url_for('static', filename='vendor/marked.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/purify.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/highlight.min.js') }}"></script>
+
+</head>
+
+
+<body>
+
+
+  <div id="app">
+
+
+    <!-- ===================================================== -->
+    <!-- SIDEBAR -->
+    <!-- ===================================================== -->
+
+    <aside id="sidebar" class="sidebar">
+
+      <div class="brand">
+
+        <div class="brand-icon">
+          L
+        </div>
+
+        <strong>
+          LocalGPT
+        </strong>
+
+      </div>
+
+
+      <button id="new-chat" class="new-chat">
+
+        <i class="fa-regular fa-pen-to-square"></i>
+
+        <span>
+          New chat
+        </span>
+
+        <kbd>
+          Ctrl K
+        </kbd>
+
+      </button>
+
+
+      <div class="sidebar-section">
+
+        <div class="section-label">
+          Chats
+        </div>
+
+        <div id="chat-list"></div>
+
+      </div>
+
+
+      <div class="sidebar-bottom">
+
+        <button id="api-keys-button" class="sidebar-action">
+
+          <i class="fa-solid fa-key"></i>
+
+          <div>
+            <strong>
+              API Keys
+            </strong>
+
+            <span>
+              Connect your projects
+            </span>
+          </div>
+
+        </button>
+
+
+        <button id="settings-button" class="sidebar-action">
+
+          <i class="fa-solid fa-gear"></i>
+
+          <div>
+            <strong>
+              Settings
+            </strong>
+
+            <span>
+              Models & preferences
+            </span>
+          </div>
+
+        </button>
+
+
+        <button id="logout-button" class="sidebar-action">
+
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+
+          <div>
+            <strong>
+              Logout
+            </strong>
+
+            <span>
+              {{ username }}
+            </span>
+          </div>
+
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- ===================================================== -->
+    <!-- MAIN -->
+    <!-- ===================================================== -->
+
+    <main class="main">
+
+
+      <header class="topbar">
+
+        <div class="model-picker">
+
+          <button id="model-picker-button" class="model-picker-button">
+
+            <strong id="selected-model-name">
+              Loading...
+            </strong>
+
+            <span id="selected-model-mode"></span>
+
+            <i class="fa-solid fa-chevron-down"></i>
+
+          </button>
+
+
+          <div id="model-menu" class="model-menu hidden">
+
+            <div id="model-options"></div>
+
+          </div>
+
+        </div>
+
+
+        <div class="local-status">
+
+          <span class="status-dot"></span>
+
+          Local
+
+        </div>
+
+      </header>
+
+
+      <!-- ===================================================== -->
+      <!-- CHAT -->
+      <!-- ===================================================== -->
+
+      <section id="chat-area" class="chat-area">
+
+
+        <div id="welcome-screen" class="welcome-screen">
+
+          <div class="welcome-logo">
+            L
+          </div>
+
+          <h1>
+            How can I help?
+          </h1>
+
+          <p>
+            Private AI running locally on your computer.
+          </p>
+
+
+          <div class="suggestions">
+
+            <button class="suggestion" data-prompt="Write a Python program for me">
+              Write code
+            </button>
+
+
+            <button class="suggestion" data-prompt="Explain a difficult topic simply">
+              Explain something
+            </button>
+
+
+            <button class="suggestion" data-prompt="Help me brainstorm project ideas">
+              Brainstorm
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div id="messages" class="messages"></div>
+
+
+      </section>
+
+
+      <!-- ===================================================== -->
+      <!-- INPUT -->
+      <!-- ===================================================== -->
+
+      <div class="composer-wrapper">
+
+        <div class="composer">
+
+          <textarea id="message-input" rows="1" placeholder="Message LocalGPT"></textarea>
+
+
+          <div class="composer-bottom">
+
+            <button class="plus-button" title="Attachments coming later">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+
+
+            <button id="send-button" class="send-button" disabled>
+
+              <i class="fa-solid fa-arrow-up"></i>
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="model-footer">
+
+          <span id="active-model-footer">
+            LocalGPT
+          </span>
+
+          <span>
+            •
+          </span>
+
+          <span>
+            Running locally
+          </span>
+
+        </div>
+
+      </div>
+
+
+    </main>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- API KEY MODAL -->
+  <!-- ===================================================== -->
+
+  <div id="api-modal" class="modal hidden">
+
+    <div class="modal-card large-modal">
+
+      <div class="modal-header">
+
+        <div>
+
+          <h2>
+            API Keys
+          </h2>
+
+          <p>
+            Use LocalGPT from your own projects.
+          </p>
+
+        </div>
+
+
+        <button class="icon-button" data-close-modal="api-modal">
+
+          <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+      </div>
+
+
+      <div class="create-key-row">
+
+        <input id="api-key-name" placeholder="e.g. LifeLink AI">
+
+        <button id="create-api-key" class="primary-button">
+          Create key
+        </button>
+
+      </div>
+
+
+      <div id="new-key-box" class="new-key-box hidden">
+
+        <strong>
+          Save this key now
+        </strong>
+
+        <p>
+          It will only be shown once.
+        </p>
+
+
+        <div class="secret-row">
+
+          <code id="new-api-key"></code>
+
+
+          <button id="copy-api-key">
+            Copy
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div id="api-key-list" class="api-key-list"></div>
+
+
+      <div class="api-help">
+
+        <strong>
+          Endpoint
+        </strong>
+
+        <code>
+                http://127.0.0.1:5000/v1/chat/completions
+            </code>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- QUESTION MODAL -->
+  <!-- ===================================================== -->
+
+  <div id="question-modal" class="modal hidden">
+
+    <div class="modal-card">
+
+      <div class="question-icon">
+
+        <i class="fa-regular fa-circle-question"></i>
+
+      </div>
+
+
+      <h2 id="question-title">
+        LocalGPT has a question
+      </h2>
+
+
+      <p id="question-text"></p>
+
+
+      <div id="question-options" class="question-options"></div>
+
+
+      <textarea id="question-custom-answer" placeholder="Or type your answer..." rows="3"></textarea>
+
+
+      <div class="question-actions">
+
+        <button id="question-cancel" class="secondary-button">
+          Cancel
+        </button>
+
+
+        <button id="question-submit" class="primary-button">
+          Send answer
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- TOASTS -->
+  <!-- ===================================================== -->
+
+  <div id="toast-container" class="toast-container"></div>
+
+
+  <script src="{{ url_for('static', filename='js/app.js') }}">
+  </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Local data / databases
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+.env
+.env.*
+.secret_key
+*.key
+secrets.json
+
+# Node.js - if used later
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Windows
+Thumbs.db
+Desktop.ini
