@@ -24,36 +24,56 @@ This repo/README documents my setup, the hardware it runs on, and real response-
 
 > This setup is a normal mid-range gaming/productivity laptop — nothing exotic. The point is to show this is achievable on hardware most people already own.
 
+## How It's Built
+
+Unlike most "run an LLM locally" tutorials, this isn't Ollama/LM Studio with a stock chat UI — it's a **fully custom interface** built from scratch:
+
+- **Backend:** Flask + Flask-SQLAlchemy + Flask-CORS, served via `waitress` (production-grade WSGI server)
+- **Frontend:** Custom HTML/CSS/JS (`templates/`, `static/`)
+- **Model handling:** `model_manager.py` loads and runs the Gemma model files directly (downloaded manually — no Ollama/LM Studio dependency)
+- **Chat history/storage:** `database.py`
+- **Config:** `config.py`
+- **Desktop app packaging:** `desktop.py` wraps the Flask app into a standalone desktop application (with its own icon, `localgpt.ico`) — so it runs like a native app instead of "open browser, go to localhost"
+
+Repo: [github.com/charanachanta2/LocalGPT](https://github.com/charanachanta2/LocalGPT)
+
 ## Prerequisites
 
 Before setting this up, make sure you have:
 
+- Python 3.x installed
 - A laptop/desktop with at least 8GB RAM (16GB recommended for smoother performance)
 - ~5-10GB free disk space per model
 - *(GPU optional — CPU-only works but will be slower)*
-- Basic command line familiarity
-- One of: [Ollama](https://ollama.com), [LM Studio](https://lmstudio.ai), or [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- The Gemma model files downloaded (not via Ollama — placed directly wherever `model_manager.py` expects them)
 
 ## Setup
 
-*(Fill in the exact steps you used — example below, edit as needed)*
-
 ```bash
-# 1. Install Ollama / LM Studio / llama.cpp (whichever you used)
-# 2. Pull the Gemma model
-ollama pull gemma3:4b
+# 1. Clone the repo
+git clone https://github.com/charanachanta2/LocalGPT.git
+cd LocalGPT
 
-# 3. Run it
-ollama run gemma3:4b
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. (Add here: where to place the downloaded Gemma model files,
+#     and any config.py values that need updating — model path, port, etc.)
+
+# 4. Run the app
+python app.py
+
+# — OR, to run it as a standalone desktop app —
+python desktop.py
 ```
 
 ### Step-by-Step (detailed)
 
-1. *(e.g. Download and install Ollama from the website)*
-2. *(e.g. Open terminal, run the pull command)*
-3. *(e.g. Wait for download — model size ~X GB)*
-4. *(e.g. Start chatting via `ollama run gemma3:4b` or connect it to a UI like Open WebUI)*
-5. *(Any custom system prompt or persona you set up for your "GPT")*
+1. Download the Gemma 3 4B / 4B E4B model files *(add source — e.g. Hugging Face link, and file format used, e.g. GGUF)*
+2. Place the model files in *(the folder/path your `model_manager.py` expects)*
+3. Update `config.py` with *(model path, port number, any other settings)*
+4. Install dependencies with `pip install -r requirements.txt`
+5. Run `python app.py` for the web interface (served via waitress) — or `python desktop.py` to launch it as a native desktop window
 
 ## Performance Benchmarks
 
@@ -158,7 +178,7 @@ Be upfront about these — it builds trust with readers:
 Free after initial setup — no API fees, runs entirely offline on your own hardware.
 
 **Q: Can I use a different model instead of Gemma?**
-Yes — Ollama/LM Studio support many open models (Llama, Mistral, Phi, Qwen, etc.). Gemma was chosen here because *(your reason — e.g. good balance of speed/quality for this hardware)*.
+Yes, as long as `model_manager.py` supports the format/loader for that model. Gemma was chosen here because *(your reason — e.g. good balance of speed/quality for this hardware)*.
 
 **Q: Is my data private?**
 Yes — since it runs fully locally, nothing is sent to any external server.
