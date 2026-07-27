@@ -121,7 +121,7 @@ RAM usage while the model was actively running, captured via Task Manager:
 
 
 
-*(Fill in — this makes your numbers credible to others)*
+
 
 - Each prompt run **3 times**, average taken
 - Timer started when prompt submitted, stopped when full response finished streaming
