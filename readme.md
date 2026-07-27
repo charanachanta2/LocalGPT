@@ -30,9 +30,9 @@ Unlike most "run an LLM locally" tutorials, this isn't Ollama/LM Studio with a s
 
 - **Backend:** Flask + Flask-SQLAlchemy + Flask-CORS, served via `waitress` (production-grade WSGI server)
 - **Frontend:** Custom HTML/CSS/JS (`templates/`, `static/`)
-- **Model handling:** `model_manager.py` loads and runs the Gemma model files directly (downloaded manually — no Ollama/LM Studio dependency)
-- **Chat history/storage:** `database.py`
-- **Config:** `config.py`
+- **Inference engine:** `model_manager.py` spawns `llama.exe` (a locally installed [llama.cpp](https://github.com/ggerganov/llama.cpp) server binary) as a subprocess, pointing it at the downloaded `.gguf` model file. Flask then talks to that llama.cpp server over HTTP (`http://127.0.0.1:8080`) to get responses.
+- **Chat history/storage:** `database.py` (SQLite, stored in a local `data/` folder)
+- **Config:** `config.py` — defines model paths, ports, and per-model settings (GPU layers, context size)
 - **Desktop app packaging:** `desktop.py` wraps the Flask app into a standalone desktop application (with its own icon, `localgpt.ico`) — so it runs like a native app instead of "open browser, go to localhost"
 
 Repo: [github.com/charanachanta2/LocalGPT](https://github.com/charanachanta2/LocalGPT)
@@ -45,35 +45,73 @@ Before setting this up, make sure you have:
 - A laptop/desktop with at least 8GB RAM (16GB recommended for smoother performance)
 - ~5-10GB free disk space per model
 - *(GPU optional — CPU-only works but will be slower)*
-- The Gemma model files downloaded (not via Ollama — placed directly wherever `model_manager.py` expects them)
+- A [llama.cpp](https://github.com/ggerganov/llama.cpp) build for your OS (specifically `llama.exe` / the `llama-server` binary on Windows) — this is what actually runs the model
+- The Gemma model files downloaded as `.gguf` files (see below)
+
+### Folder Layout
+
+`config.py` expects a specific folder structure — the repo folder and the model/runtime files are **siblings**, not nested inside each other:
+
+```
+LocalLLM/                          ← parent folder (name it anything)
+├── LocalGPT/                      ← this repo, cloned here
+│   ├── app.py
+│   ├── config.py
+│   ├── model_manager.py
+│   └── ...
+├── models/                        ← put your downloaded .gguf files here
+│   ├── gemma-3-4b-it-Q4_K_M.gguf
+│   └── gemma-4-E4B-it-Q4_0.gguf
+└── runtime/                       ← put the llama.cpp binary here
+    └── llama.exe
+```
+
+`data/` (for the SQLite chat history database) is created automatically on first run.
 
 ## Setup
 
 ```bash
-# 1. Clone the repo
+# 1. Create a parent folder and clone the repo inside it
+mkdir LocalLLM
+cd LocalLLM
 git clone https://github.com/charanachanta2/LocalGPT.git
-cd LocalGPT
 
-# 2. Install dependencies
+# 2. Create the sibling folders llama.cpp and the models expect
+mkdir models
+mkdir runtime
+
+# 3. Download llama.cpp and place the binary in runtime/
+#    (get it from https://github.com/ggerganov/llama.cpp/releases,
+#    the Windows build gives you llama-server.exe / llama.exe)
+
+# 4. Download the Gemma model files into models/
+curl.exe -L "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf?download=true" -o "models/gemma-3-4b-it-Q4_K_M.gguf"
+curl.exe -L "https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_0.gguf?download=true" -o "models/gemma-4-E4B-it-Q4_0.gguf"
+
+# 5. Install Python dependencies
+cd LocalGPT
 pip install -r requirements.txt
 
-# 3. (Add here: where to place the downloaded Gemma model files,
-#     and any config.py values that need updating — model path, port, etc.)
-
-# 4. Run the app
+# 6. Run the app
 python app.py
 
 # — OR, to run it as a standalone desktop app —
 python desktop.py
 ```
 
+The web interface runs at `http://127.0.0.1:5000` by default (see `APP_PORT` in `config.py`); the llama.cpp server it spawns runs at `http://127.0.0.1:8080` (see `LLAMA_PORT`).
+
 ### Step-by-Step (detailed)
 
-1. Download the Gemma 3 4B / 4B E4B model files *(add source — e.g. Hugging Face link, and file format used, e.g. GGUF)*
-2. Place the model files in *(the folder/path your `model_manager.py` expects)*
-3. Update `config.py` with *(model path, port number, any other settings)*
-4. Install dependencies with `pip install -r requirements.txt`
-5. Run `python app.py` for the web interface (served via waitress) — or `python desktop.py` to launch it as a native desktop window
+1. **Download the Gemma model files** — must match the exact filenames referenced in `config.py`'s `MODELS` dict:
+   - `gemma-3-4b-it-Q4_K_M.gguf`
+   - `gemma-4-E4B-it-Q4_0.gguf`
+2. **Place the model files** in the `models/` folder — a sibling of the cloned repo folder (see Folder Layout above), *not* inside `LocalGPT/`.
+3. **Place `llama.exe`** (the llama.cpp server binary) in the `runtime/` folder, also a sibling of the repo.
+4. Install dependencies with `pip install -r requirements.txt`.
+5. Run `python app.py` for the web interface (served via waitress) — or `python desktop.py` to launch it as a native desktop window. On first request, `model_manager.py` automatically launches `llama.exe` with the right model path, GPU layers, and context size for whichever model you select.
+
+> **Note on GPU layers:** in `config.py`, Gemma 3 4B is configured with `gpu_layers: 99` (full GPU offload — fast), while Gemma 4 E4B is set to `gpu_layers: 0` (CPU-only) because that was the stable configuration on the RTX 3050 (4GB VRAM). This is a big part of why E4B is slower in the benchmarks below.
 
 ## Performance Benchmarks
 
@@ -121,18 +159,19 @@ RAM usage while the model was actively running, captured via Task Manager:
 
 
 
-
+### Testing Methodology
 
 - Each prompt run **3 times**, average taken
 - Timer started when prompt submitted, stopped when full response finished streaming
 - Fresh session for each test (no prior context in the chat)
-- Model: 4B
+- Model: Gemma 3 4B (unless noted otherwise)
 
 ### Observations
 
 - Basic Q&A is fast enough to feel conversational (1–2s).
-- Code generation takes noticeably longer (~15s), likely due to longer, more structured output and higher token count rather than model complexity itself.
+- Code generation takes noticeably longer (~11–15s), likely due to longer, more structured output and higher token count rather than model complexity itself.
 - Performance is naturally capped by the 4GB VRAM — larger models or longer contexts would be slower or may not fit at all.
+- Gemma 4 E4B runs CPU-only in this setup (see GPU layers note above), which is a major reason it's consistently slower than Gemma 3 4B in the comparison table below.
 
 ## Model Comparison: Gemma 3 4B vs Gemma 3 4B E4B
 
@@ -146,7 +185,7 @@ RAM usage while the model was actively running, captured via Task Manager:
 
 ## Why This Matters
 
-You don't need expensive hardware or a paid subscription to run your own AI assistant. With open models like Gemma and tools like Ollama/LM Studio, anyone with a decent laptop can set up a private, offline GPT-style assistant in minutes.
+You don't need expensive hardware or a paid subscription to run your own AI assistant. With open models like Gemma running through llama.cpp, anyone with a decent laptop can set up a private, offline GPT-style assistant with their own custom interface — no subscription, no API key, no data leaving the machine.
 
 ## Use Cases
 
@@ -171,13 +210,13 @@ Be upfront about these — it builds trust with readers:
 ## Frequently Asked Questions
 
 **Q: Do I need a GPU to run this?**
-Yes, if you want to get faster answers.
+No — CPU-only works. In this setup, Gemma 4 E4B actually runs CPU-only (`gpu_layers: 0` in `config.py`) because that was the stable configuration on the RTX 3050's 4GB VRAM. A GPU speeds things up significantly when there's enough VRAM to offload layers to it — Gemma 3 4B uses full GPU offload (`gpu_layers: 99`) here.
 
 **Q: How much does this cost to run?**
 Free after initial setup — no API fees, runs entirely offline on your own hardware.
 
 **Q: Can I use a different model instead of Gemma?**
-Yes, as long as `model_manager.py` supports the format/loader for that model. Gemma was chosen here because *(your reason — e.g. good balance of speed/quality for this hardware)*.
+Yes — since the backend runs any `.gguf` file through llama.cpp, you can swap in any GGUF-format model by adding an entry to the `MODELS` dict in `config.py` with its filename, GPU layers, and context size. Gemma was chosen here for a good balance of speed and quality on limited (4GB) VRAM.
 
 **Q: Is my data private?**
 Yes — since it runs fully locally, nothing is sent to any external server.
