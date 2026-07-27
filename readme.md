@@ -180,4 +180,4 @@ This will help build a broader picture of what's realistically achievable on con
 
 ## License
 
-*(Add your license here, e.g. MIT)*
+This project is licensed under the [MIT License](LICENSE) — see the LICENSE file for details.
