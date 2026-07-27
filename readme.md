@@ -119,11 +119,11 @@ RAM usage while the model was actively running, captured via Task Manager:
 
 | Metric | Gemma 3 4B | Gemma 3 4B E4B |
 |---|---|---|
-| Avg. simple Q&A time | *(fill in)* | *(fill in)* |
-| Avg. code gen time | *(fill in)* | *(fill in)* |
-| RAM usage (idle) | *(fill in)* | *(fill in)* |
-| RAM usage (during inference) | *(fill in)* | *(fill in)* |
-| Output quality (subjective) | *(fill in)* | *(fill in)* |
+| Avg. simple Q&A time | 2 seconds | 5 seconds |
+| Avg. code gen time | 10 seconds | 15 seconds |
+| RAM usage (idle) | ~70% | ~75% |
+| RAM usage (during inference) | 85–87% | 87–93% |
+| Output quality (subjective) | Good for faster responses | Good for smarter, more useful answers |
 
 ## Why This Matters
 
