@@ -126,14 +126,13 @@ RAM usage while the model was actively running, captured via Task Manager:
 - Each prompt run **3 times**, average taken
 - Timer started when prompt submitted, stopped when full response finished streaming
 - Fresh session for each test (no prior context in the chat)
-- Model: *(specify which of the two — 4B or 4B E4B — for each row, or split into two tables)*
+- Model: 4B
 
 ### Observations
 
 - Basic Q&A is fast enough to feel conversational (1–2s).
 - Code generation takes noticeably longer (~15s), likely due to longer, more structured output and higher token count rather than model complexity itself.
 - Performance is naturally capped by the 4GB VRAM — larger models or longer contexts would be slower or may not fit at all.
-- *(Add more once you fill in the extra rows above — e.g. does reasoning take longer than factual recall? Does E4B outperform standard 4B?)*
 
 ## Model Comparison: Gemma 3 4B vs Gemma 3 4B E4B
 
@@ -172,7 +171,7 @@ Be upfront about these — it builds trust with readers:
 ## Frequently Asked Questions
 
 **Q: Do I need a GPU to run this?**
-*(fill in — e.g. "No, but it's slower on CPU-only")*
+Yes, if you want to get faster answers.
 
 **Q: How much does this cost to run?**
 Free after initial setup — no API fees, runs entirely offline on your own hardware.
