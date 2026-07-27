@@ -20,7 +20,7 @@ This repo/README documents my setup, the hardware it runs on, and real response-
 | CPU | Intel Core i5, 12th Gen |
 | RAM | 16 GB DDR5 |
 | GPU | RTX 3050, 4 GB VRAM |
-| OS | *(add yours here, e.g. Windows 11 / Ubuntu 22.04)* |
+| OS | Windows 11 |
 
 > This setup is a normal mid-range gaming/productivity laptop — nothing exotic. The point is to show this is achievable on hardware most people already own.
 
